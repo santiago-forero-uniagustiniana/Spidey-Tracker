@@ -1,2 +1,2 @@
 # Spidey-Tracker
-Spiderman traker for fun
+Spiderman tracker for fun
