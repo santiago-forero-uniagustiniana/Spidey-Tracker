@@ -15,7 +15,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-    <title>Spidey Tracker</title>
+    <title>Spider Tracker</title>
 
 
     <!-- LEAFLET -->
@@ -1316,6 +1316,16 @@
 
                 height:
                     auto;
+
+                /* Espacio de respiro al final del scroll para que la
+                   barra de gestos / botones de Android no tape el
+                   último elemento (el botón de tracking). Usamos un
+                   mínimo fijo generoso por si el dispositivo no
+                   reporta bien env(safe-area-inset-bottom) (p. ej.
+                   barra de navegación clásica de 3 botones, que no
+                   se refleja en ese valor). */
+                padding-bottom:
+                    max(32px, calc(18px + env(safe-area-inset-bottom)));
             }
 
 
@@ -1332,29 +1342,49 @@
                 height: 55dvh;
 
                 min-height:
-                    400px;
+                    380px;
 
                 border-radius:
                     0 0 10px 10px;
             }
 
 
+            /* =============================================
+               PANEL DERECHO EN PORTRAIT
+               Ya no es una fila con scroll horizontal: ahora es
+               una grilla vertical compacta que forma parte del
+               scroll normal de la página (todo cabe ordenado,
+               sin que el usuario tenga que desplazarse de lado).
+            ============================================= */
+
             .sidebar {
 
-                display:
-                    grid;
+                display: grid;
 
                 grid-template-columns:
                     1fr 1fr;
 
+                gap: 10px;
+
                 overflow-y: visible;
+            }
+
+
+            /* Estos tres ocupan las dos columnas completas;
+               el resto (estado/objetivo y precisión/actualización)
+               se empareja automáticamente de a dos por fila */
+            .radar-panel,
+            .card-coords,
+            .tracking-button {
+
+                grid-column: 1 / -1;
             }
 
 
             .radar-panel {
 
                 height:
-                    250px;
+                    240px;
             }
 
         }
@@ -1368,7 +1398,10 @@
                     8px;
 
                 padding-top: calc(8px + env(safe-area-inset-top));
-                padding-bottom: calc(8px + env(safe-area-inset-bottom));
+
+                padding-bottom:
+                    max(28px, calc(8px + env(safe-area-inset-bottom)));
+
                 padding-left: calc(8px + env(safe-area-inset-left));
                 padding-right: calc(8px + env(safe-area-inset-right));
             }
@@ -1415,49 +1448,245 @@
             }
 
 
-            .sidebar {
+            .radar-panel {
 
-                display: flex;
-                flex-direction: row;
-                flex-wrap: nowrap;
+                height:
+                    210px;
+            }
+
+
+            .radar {
+
+                width: 190px;
+                height: 190px;
+            }
+
+
+            .card {
+
+                padding: 12px;
+            }
+
+
+            /* Último elemento visible antes del margen de seguridad:
+               un poco de aire extra para que no quede pegado al
+               borde inferior de la pantalla */
+            .tracking-button {
+
+                margin-bottom: 4px;
+            }
+
+        }
+
+
+        /* Footer/franja de seguridad explícita para pantallas con
+           barra de navegación clásica (3 botones) que no reportan
+           env(safe-area-inset-bottom) en absoluto. Es invisible
+           (mismo color de fondo) pero garantiza aire real al final
+           del scroll en cualquier dispositivo. */
+        @media (max-width: 900px) {
+
+            .app::after {
+
+                content: "";
+                display: block;
+                flex-shrink: 0;
+                width: 100%;
+                height: 12px;
+            }
+
+        }
+
+
+        /* =====================================================
+           MODO APP LANDSCAPE (16:9)
+           Se activa en pantallas anchas y de poca altura con
+           pantalla táctil (teléfono en horizontal, ya sea porque
+           el usuario lo giró o porque WebIntoApp fuerza la
+           orientación landscape). Todo el contenido —mapa, radar,
+           información y botón— se ajusta con clamp()/dvh para
+           caber SIEMPRE en una sola pantalla, sin scroll.
+        ===================================================== */
+
+        @media (orientation: landscape) and (hover: none) and (pointer: coarse) {
+
+            html, body {
+                height: 100dvh;
+                overflow: hidden;
+            }
+
+
+            .app {
+
+                height: 100dvh;
+                overflow: hidden;
+
+                gap: clamp(6px, 1.4dvh, 12px);
+
+                padding: 10px 14px;
+
+                /* Espacio reservado para la barra de gestos /
+                   botones de navegación de Android, incluso en
+                   dispositivos que no reportan bien env() */
+                padding-top:
+                    max(10px, env(safe-area-inset-top));
+
+                padding-bottom:
+                    max(16px, env(safe-area-inset-bottom));
+
+                padding-left:
+                    max(14px, env(safe-area-inset-left));
+
+                padding-right:
+                    max(14px, env(safe-area-inset-right));
+            }
+
+
+            .header {
+
+                height: clamp(42px, 9dvh, 70px);
+                flex-shrink: 0;
+
+                padding: 4px 16px;
+            }
+
+
+            .logo {
+                width: clamp(30px, 6dvh, 48px);
+                height: clamp(30px, 6dvh, 48px);
+                margin-right: 10px;
+            }
+
+
+            .header-title h1 {
+                font-size: clamp(15px, 3dvh, 24px);
+                letter-spacing: 1px;
+            }
+
+
+            .header-title p {
+                font-size: clamp(7px, 1.5dvh, 11px);
+                margin-top: 2px;
+            }
+
+
+            .content {
 
                 grid-template-columns:
-                    unset;
+                    minmax(0, 1fr)
+                    minmax(230px, 30vw);
 
-                overflow-x: auto;
-                overflow-y: hidden;
+                gap: clamp(6px, 1.4dvh, 12px);
 
-                -webkit-overflow-scrolling: touch;
-                touch-action: pan-x;
-
-                scroll-snap-type: x proximity;
-                scroll-padding-left: 8px;
-
-                padding-bottom: 6px; /* deja espacio para la barra de scroll */
+                overflow: hidden;
             }
 
 
-            /* Cada tarjeta necesita un ancho fijo: sin esto,
-               el navegador las encoge en vez de dejar hacer scroll */
-            .sidebar > .radar-panel,
-            .sidebar > .card,
-            .sidebar > .tracking-button {
+            /* El panel derecho ya NO hace scroll: se organiza en
+               una grilla compacta que siempre cabe en el alto
+               disponible, con el radar absorbiendo el espacio
+               sobrante (minmax(0,1fr)) */
 
-                flex: 0 0 auto;
-                width: 78vw;
-                max-width: 300px;
+            .sidebar {
 
-                scroll-snap-align: start;
+                display: grid;
+
+                grid-template-columns: 1fr 1fr;
+
+                grid-template-rows:
+                    minmax(0, 1fr)
+                    auto
+                    auto
+                    auto
+                    auto;
+
+                grid-template-areas:
+                    "radar  radar"
+                    "status target"
+                    "coords coords"
+                    "accur  update"
+                    "button button";
+
+                gap: clamp(4px, 1dvh, 8px);
+
+                height: 100%;
+                min-height: 0;
+
+                overflow: hidden;
             }
 
 
-            .sidebar::-webkit-scrollbar {
-                height: 4px;
+            .radar-panel {
+                grid-area: radar;
+                height: auto;
+                min-height: 0;
             }
 
-            .sidebar::-webkit-scrollbar-thumb {
-                background: #ff001c;
-                border-radius: 2px;
+
+            .radar {
+                width: clamp(84px, 22dvh, 200px);
+                height: clamp(84px, 22dvh, 200px);
+            }
+
+
+            .card {
+                padding: clamp(6px, 1.3dvh, 12px);
+            }
+
+
+            .card-title {
+                font-size: clamp(8px, 1.3dvh, 11px);
+                margin-bottom: 4px;
+            }
+
+
+            .card-status { grid-area: status; }
+            .card-target { grid-area: target; }
+            .card-coords { grid-area: coords; }
+            .card-accuracy { grid-area: accur; }
+            .card-update { grid-area: update; }
+
+
+            .status {
+                font-size: clamp(11px, 2dvh, 15px);
+            }
+
+
+            .target-name {
+                font-size: clamp(12px, 2.2dvh, 16px);
+            }
+
+
+            .coordinates {
+                gap: clamp(4px, 1dvh, 10px);
+                margin-top: 4px;
+            }
+
+
+            .coordinate span:first-child {
+                font-size: clamp(7px, 1.1dvh, 9px);
+            }
+
+
+            .coordinate span:last-child {
+                font-size: clamp(11px, 2dvh, 14px);
+            }
+
+
+            .last-update {
+                font-size: clamp(10px, 1.9dvh, 14px);
+            }
+
+
+            .tracking-button {
+                grid-area: button;
+                padding: clamp(8px, 1.7dvh, 14px);
+                font-size: clamp(10px, 1.7dvh, 13px);
+            }
+
+
+            #debugInfo {
+                font-size: 8px;
             }
 
         }
@@ -1473,6 +1702,7 @@
     <!-- DECORACIÓN -->
 
     <div class="circuit circuit-left">
+
 
         <span></span>
         <span></span>
@@ -1611,7 +1841,7 @@
 
                 <!-- ESTADO -->
 
-                <div class="card">
+                <div class="card card-status">
 
                     <div class="card-title">
                         ESTADO
@@ -1636,7 +1866,7 @@
 
                 <!-- OBJETIVO -->
 
-                <div class="card">
+                <div class="card card-target">
 
                     <div class="card-title">
                         OBJETIVO
@@ -1651,7 +1881,7 @@
 
                 <!-- COORDENADAS -->
 
-                <div class="card">
+                <div class="card card-coords">
 
                     <div class="card-title">
                         COORDENADAS
@@ -1692,7 +1922,7 @@
 
                 <!-- PRECISIÓN -->
 
-                <div class="card">
+                <div class="card card-accuracy">
 
                     <div class="card-title">
                         PRECISIÓN
@@ -1711,7 +1941,7 @@
 
                 <!-- ACTUALIZACIÓN -->
 
-                <div class="card">
+                <div class="card card-update">
 
                     <div class="card-title">
                         ÚLTIMA ACTUALIZACIÓN
@@ -1736,6 +1966,16 @@
                 >
                     ⦿ &nbsp; ACTIVAR SPIDER-TRACKING
                 </button>
+
+
+                <!-- Diagnóstico visible: útil para depurar dentro
+                     del APK, donde no hay consola de desarrollador -->
+                <div
+                    id="debugInfo"
+                    style="font-size:10px; color:#888; text-align:center; letter-spacing:0.5px; word-break:break-word;"
+                >
+                    cargando diagnóstico...
+                </div>
 
 
             </aside>
@@ -2262,7 +2502,48 @@
 
         window.addEventListener("load", function () {
             refreshMapSize();
+            runDiagnostics();
         });
+
+
+        /* =====================================================
+           DIAGNÓSTICO EN PANTALLA
+           Útil para depurar dentro del APK, donde no hay consola
+           de desarrollador a mano. Muestra si el WebView siquiera
+           soporta geolocalización y qué dice el permiso del
+           sistema, sin disparar el prompt todavía.
+        ===================================================== */
+
+        async function runDiagnostics() {
+
+            const parts = [];
+
+            parts.push(
+                "geolocation API: " + (navigator.geolocation ? "sí" : "NO")
+            );
+
+            parts.push(
+                "contexto seguro: " + (window.isSecureContext ? "sí" : "NO")
+            );
+
+            try {
+                if (navigator.permissions && navigator.permissions.query) {
+                    const status = await navigator.permissions.query({ name: "geolocation" });
+                    parts.push("permiso: " + status.state); // "granted" | "prompt" | "denied"
+                } else {
+                    parts.push("permiso: API no soportada por este WebView");
+                }
+            } catch (e) {
+                parts.push("permiso: no se pudo consultar (" + e.message + ")");
+            }
+
+            console.log("[Spidey Tracker diagnóstico] " + parts.join(" | "));
+
+            const debugEl = document.getElementById("debugInfo");
+            if (debugEl) {
+                debugEl.textContent = parts.join(" · ");
+            }
+        }
 
 
     </script>
