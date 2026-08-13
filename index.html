@@ -15,7 +15,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-    <title>Spider Tracker</title>
+    <title>Spidey Tracker</title>
 
 
     <!-- LEAFLET -->
@@ -1417,11 +1417,47 @@
 
             .sidebar {
 
-                display:
-                    flex;
+                display: flex;
+                flex-direction: row;
+                flex-wrap: nowrap;
 
                 grid-template-columns:
                     unset;
+
+                overflow-x: auto;
+                overflow-y: hidden;
+
+                -webkit-overflow-scrolling: touch;
+                touch-action: pan-x;
+
+                scroll-snap-type: x proximity;
+                scroll-padding-left: 8px;
+
+                padding-bottom: 6px; /* deja espacio para la barra de scroll */
+            }
+
+
+            /* Cada tarjeta necesita un ancho fijo: sin esto,
+               el navegador las encoge en vez de dejar hacer scroll */
+            .sidebar > .radar-panel,
+            .sidebar > .card,
+            .sidebar > .tracking-button {
+
+                flex: 0 0 auto;
+                width: 78vw;
+                max-width: 300px;
+
+                scroll-snap-align: start;
+            }
+
+
+            .sidebar::-webkit-scrollbar {
+                height: 4px;
+            }
+
+            .sidebar::-webkit-scrollbar-thumb {
+                background: #ff001c;
+                border-radius: 2px;
             }
 
         }
