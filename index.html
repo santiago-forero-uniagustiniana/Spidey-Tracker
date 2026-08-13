@@ -1463,22 +1463,503 @@
         }
 
 
-        /* =====================================================
-           MODO APP LANDSCAPE (16:9)
-           Se activa en pantallas anchas y de poca altura con
-           pantalla táctil (teléfono en horizontal, ya sea porque
-           el usuario lo giró o porque WebIntoApp fuerza la
-           orientación landscape). Todo el contenido —mapa, radar,
-           información y botón— se ajusta con clamp()/dvh para
-           caber SIEMPRE en una sola pantalla, sin scroll.
-        ===================================================== */
+/* =====================================================
+   MODO APP PORTRAIT 9:16
+   Diseño vertical optimizado para teléfonos
+===================================================== */
 
-        @media (orientation: landscape) and (hover: none) and (pointer: coarse) {
+@media (orientation: portrait) {
 
-            html, body {
-                height: 100dvh;
-                overflow: hidden;
-            }
+    html,
+    body {
+
+        width: 100%;
+        height: 100%;
+        min-height: 100dvh;
+
+        overflow-x: hidden;
+        overflow-y: auto;
+
+        overscroll-behavior-y: contain;
+    }
+
+
+    body {
+
+        min-width: 0;
+        background: #050505;
+    }
+
+
+    .app {
+
+        width: 100%;
+        min-height: 100dvh;
+        height: auto;
+
+        padding:
+            max(10px, env(safe-area-inset-top))
+            max(10px, env(safe-area-inset-right))
+            max(16px, env(safe-area-inset-bottom))
+            max(10px, env(safe-area-inset-left));
+
+        display: flex;
+        flex-direction: column;
+
+        gap: 10px;
+
+        overflow: visible;
+    }
+
+
+    /* =================================================
+       HEADER
+    ================================================= */
+
+    .header {
+
+        width: 100%;
+        height: 70px;
+
+        flex-shrink: 0;
+
+        padding: 8px 12px;
+
+        border-radius: 10px 10px 0 0;
+    }
+
+
+    .logo {
+
+        width: 48px;
+        height: 48px;
+
+        margin-right: 10px;
+    }
+
+
+    .header-title {
+
+        min-width: 0;
+    }
+
+
+    .header-title h1 {
+
+        font-size:
+            clamp(18px, 5vw, 24px);
+
+        letter-spacing:
+            1px;
+
+        white-space:
+            nowrap;
+    }
+
+
+    .header-title p {
+
+        margin-top: 4px;
+
+        font-size:
+            clamp(8px, 2.5vw, 11px);
+
+        letter-spacing:
+            0.5px;
+
+        white-space:
+            nowrap;
+    }
+
+
+    .online-indicator {
+
+        display: none;
+    }
+
+
+    /* =================================================
+       CONTENIDO VERTICAL
+    ================================================= */
+
+    .content {
+
+        width: 100%;
+
+        display: flex;
+        flex-direction: column;
+
+        gap: 10px;
+
+        flex: none;
+        min-height: 0;
+
+        overflow: visible;
+    }
+
+
+    /* =================================================
+       MAPA
+       Relación 9:16 visual para el área principal
+    ================================================= */
+
+    .map-container {
+
+        width: 100%;
+
+        /*
+         * El mapa ocupa aproximadamente el 56.25%
+         * del ancho, creando una proporción cercana
+         * a 16:9 horizontal dentro del teléfono.
+         *
+         * Para una composición PORTRAIT se utiliza
+         * un área más alta.
+         */
+
+        height:
+            min(58dvh, 520px);
+
+        min-height:
+            380px;
+
+        flex-shrink: 0;
+
+        border-radius:
+            0 0 10px 10px;
+
+        touch-action:
+            none;
+
+        overscroll-behavior:
+            contain;
+    }
+
+
+    #map {
+
+        width: 100%;
+        height: 100%;
+
+        touch-action:
+            none;
+    }
+
+
+    /* =================================================
+       BOTONES MAPA
+    ================================================= */
+
+    .map-buttons {
+
+        top: 10px;
+        left: 10px;
+    }
+
+
+    .map-buttons button {
+
+        padding:
+            8px 12px;
+
+        font-size:
+            12px;
+    }
+
+
+    /* =================================================
+       SIDEBAR
+       Todo pasa a una columna vertical
+    ================================================= */
+
+    .sidebar {
+
+        width: 100%;
+
+        display: flex;
+        flex-direction: column;
+
+        gap: 10px;
+
+        overflow: visible;
+
+        min-height: 0;
+    }
+
+
+    /* =================================================
+       RADAR
+    ================================================= */
+
+    .radar-panel {
+
+        width: 100%;
+
+        height:
+            min(38dvh, 330px);
+
+        min-height:
+            250px;
+
+        flex-shrink: 0;
+
+        border-radius:
+            10px;
+    }
+
+
+    .radar {
+
+        width:
+            clamp(170px, 55vw, 240px);
+
+        height:
+            clamp(170px, 55vw, 240px);
+    }
+
+
+    /* =================================================
+       TARJETAS
+    ================================================= */
+
+    .card {
+
+        width: 100%;
+
+        padding:
+            13px;
+
+        flex-shrink: 0;
+    }
+
+
+    .card-title {
+
+        font-size:
+            11px;
+
+        margin-bottom:
+            7px;
+    }
+
+
+    .status {
+
+        font-size:
+            15px;
+    }
+
+
+    .target-name {
+
+        font-size:
+            17px;
+    }
+
+
+    .coordinates {
+
+        grid-template-columns:
+            1fr 1fr;
+
+        gap:
+            12px;
+
+        margin-top:
+            7px;
+    }
+
+
+    .coordinate span:first-child {
+
+        font-size:
+            9px;
+    }
+
+
+    .coordinate span:last-child {
+
+        font-size:
+            14px;
+    }
+
+
+    .last-update {
+
+        font-size:
+            15px;
+    }
+
+
+    /* =================================================
+       BOTÓN TRACKING
+    ================================================= */
+
+    .tracking-button {
+
+        width: 100%;
+
+        min-height:
+            52px;
+
+        padding:
+            13px;
+
+        font-size:
+            13px;
+
+        flex-shrink: 0;
+    }
+
+
+    /* =================================================
+       DIAGNÓSTICO
+    ================================================= */
+
+    #debugInfo {
+
+        width: 100%;
+
+        font-size:
+            9px !important;
+
+        line-height:
+            1.4;
+
+        padding:
+            2px 8px 8px;
+    }
+
+
+    /* =================================================
+       DECORACIÓN
+    ================================================= */
+
+    .circuit-left {
+
+        top: 80px;
+
+        width: 220px;
+        height: 220px;
+    }
+
+
+    .circuit-right {
+
+        right: 0;
+        bottom: 80px;
+
+        width: 220px;
+        height: 220px;
+    }
+
+}
+
+
+    /* =====================================================
+       PORTRAIT ESTRECHO
+       Teléfonos pequeños
+    ===================================================== */
+    
+    @media (orientation: portrait) and (max-width: 400px) {
+    
+        .app {
+    
+            padding:
+                max(7px, env(safe-area-inset-top))
+                7px
+                max(12px, env(safe-area-inset-bottom))
+                7px;
+    
+            gap: 8px;
+        }
+    
+    
+        .header {
+    
+            height: 64px;
+    
+            padding:
+                6px 9px;
+        }
+    
+    
+        .logo {
+    
+            width: 44px;
+            height: 44px;
+    
+            margin-right: 8px;
+        }
+    
+    
+        .header-title h1 {
+    
+            font-size:
+                17px;
+        }
+    
+    
+        .header-title p {
+    
+            font-size:
+                8px;
+        }
+    
+    
+        .content,
+        .sidebar {
+    
+            gap: 8px;
+        }
+    
+    
+        .map-container {
+    
+            height:
+                52dvh;
+    
+            min-height:
+                340px;
+        }
+    
+    
+        .radar-panel {
+    
+            height:
+                280px;
+    
+            min-height:
+                230px;
+        }
+    
+    
+        .radar {
+    
+            width:
+                180px;
+    
+            height:
+                180px;
+        }
+    
+    
+        .card {
+    
+            padding:
+                11px;
+        }
+    
+    
+        .tracking-button {
+    
+            min-height:
+                50px;
+    
+            font-size:
+                12px;
+        }
+    
+    }
 
 
             .app {
