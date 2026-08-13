@@ -2121,7 +2121,11 @@
                     break;
 
                 case 3:
-                    message = "La búsqueda de ubicación tardó demasiado.";
+                    message =
+                        "No se pudo obtener el GPS a tiempo. Verifica que la " +
+                        "ubicación del teléfono esté activada (modo alta precisión) " +
+                        "y que tengas buena señal (idealmente al aire libre), " +
+                        "luego vuelve a tocar el botón.";
                     document.getElementById("statusText").textContent = "OFFLINE";
                     break;
 
@@ -2143,6 +2147,14 @@
            de ubicación si el JS lo pide sin un gesto del usuario,
            que es justo lo que causaba que el móvil "no pidiera"
            el permiso.
+
+           Además, pedimos la ubicación en DOS PASOS:
+           1) Un fix rápido de baja precisión (red/Wi-Fi), que casi
+              siempre responde en 1-3 segundos y ya centra el mapa.
+           2) En paralelo/segundo intento, un fix de alta precisión
+              (GPS real) con más tiempo de margen, que es más lento
+              (sobre todo en frío o en interiores) y antes causaba
+              el error de "tardó demasiado" con solo 15s de límite.
         ===================================================== */
 
         let watchStarted = false;
@@ -2158,18 +2170,54 @@
             document.getElementById("lat").textContent = "...";
             document.getElementById("lng").textContent = "...";
 
+            requestQuickFix();
+        }
+
+
+        function requestQuickFix() {
+
             navigator.geolocation.getCurrentPosition(
 
                 (position) => {
                     applyPosition(position, { forceCenter: true, flyDuration: 2 });
-                    startWatching(); // arranca el seguimiento continuo una sola vez
+                    startWatching(); // arranca el seguimiento continuo (afina con GPS)
+                },
+
+                (error) => {
+
+                    // Si el fix rápido falla o tarda, intentamos con GPS de
+                    // alta precisión dándole bastante más margen de tiempo
+                    // antes de mostrar cualquier error al usuario.
+                    if (error.code === 3 || error.code === 2) {
+                        requestPreciseFix();
+                    } else {
+                        handleLocationError(error);
+                    }
+                },
+
+                {
+                    enableHighAccuracy: false, // red/Wi-Fi: rápido, poca batería
+                    timeout: 8000,
+                    maximumAge: 60000 // acepta una posición reciente ya cacheada
+                }
+            );
+        }
+
+
+        function requestPreciseFix() {
+
+            navigator.geolocation.getCurrentPosition(
+
+                (position) => {
+                    applyPosition(position, { forceCenter: true, flyDuration: 1.5 });
+                    startWatching();
                 },
 
                 handleLocationError,
 
                 {
-                    enableHighAccuracy: true,
-                    timeout: 15000,
+                    enableHighAccuracy: true, // GPS real
+                    timeout: 25000, // margen amplio para arranque en frío del GPS
                     maximumAge: 0
                 }
             );
@@ -2199,8 +2247,8 @@
 
                 {
                     enableHighAccuracy: true,
-                    maximumAge: 2000,
-                    timeout: 10000
+                    maximumAge: 5000,
+                    timeout: 20000 // más margen que antes para no fallar en interiores
                 }
             );
         }
