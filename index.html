@@ -7,8 +7,13 @@
 
     <meta
         name="viewport"
-        content="width=device-width, initial-scale=1.0"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
     >
+
+    <meta name="theme-color" content="#050505">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
     <title>Spider Tracker</title>
 
@@ -31,6 +36,14 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+
+        html {
+            height: 100%;
+            /* Evita el "bounce" del navegador que compite con el arrastre del mapa */
+            overscroll-behavior: none;
         }
 
 
@@ -38,8 +51,10 @@
 
             width: 100vw;
             height: 100vh;
+            height: 100dvh; /* usa la altura visual real en mobile (barra de direcciones) */
 
             overflow: hidden;
+            overscroll-behavior: none;
 
             background:
                 #050505;
@@ -250,6 +265,10 @@
             height: 100%;
 
             padding: 18px;
+            padding-top: calc(18px + env(safe-area-inset-top));
+            padding-bottom: calc(18px + env(safe-area-inset-bottom));
+            padding-left: calc(18px + env(safe-area-inset-left));
+            padding-right: calc(18px + env(safe-area-inset-right));
 
             display: flex;
 
@@ -270,6 +289,7 @@
         .header {
 
             height: 78px;
+            flex-shrink: 0;
 
             display: flex;
 
@@ -487,6 +507,11 @@
 
             box-shadow:
                 0 0 25px rgba(220,0,25,0.15);
+
+            /* El mapa gestiona sus propios gestos: evita que el navegador
+               intercepte el arrastre/zoom y lo confunda con scroll de la página */
+            touch-action: none;
+            overscroll-behavior: contain;
         }
 
 
@@ -494,6 +519,15 @@
 
             width: 100%;
             height: 100%;
+
+            touch-action: none;
+            background: #050505;
+        }
+
+
+        /* Asegura que Leaflet no delegue el gesto al navegador en mobile */
+        .leaflet-container {
+            touch-action: none !important;
         }
 
 
@@ -574,6 +608,8 @@
 
             transition:
                 0.2s;
+
+            touch-action: manipulation;
         }
 
 
@@ -607,12 +643,16 @@
             flex-direction: column;
 
             gap: 10px;
+
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
 
         .radar-panel {
 
             height: 300px;
+            flex-shrink: 0;
 
             border:
                 1px solid #b40015;
@@ -854,6 +894,8 @@
 
             box-shadow:
                 0 0 12px rgba(255,0,25,0.08);
+
+            flex-shrink: 0;
         }
 
 
@@ -1099,6 +1141,9 @@
 
             transition:
                 0.2s;
+
+            touch-action: manipulation;
+            flex-shrink: 0;
         }
 
 
@@ -1235,6 +1280,8 @@
 
             color:
                 #777 !important;
+
+            font-size: 10px !important;
         }
 
 
@@ -1251,8 +1298,11 @@
 
         @media (max-width: 900px) {
 
-            body {
-                overflow: auto;
+            html, body {
+                height: auto;
+                min-height: 100%;
+                overflow-y: auto;
+                overscroll-behavior-y: contain;
             }
 
 
@@ -1260,6 +1310,9 @@
 
                 min-height:
                     100vh;
+
+                min-height:
+                    100dvh;
 
                 height:
                     auto;
@@ -1275,8 +1328,8 @@
 
             .map-container {
 
-                height:
-                    55vh;
+                height: 55vh;
+                height: 55dvh;
 
                 min-height:
                     400px;
@@ -1293,6 +1346,8 @@
 
                 grid-template-columns:
                     1fr 1fr;
+
+                overflow-y: visible;
             }
 
 
@@ -1311,6 +1366,11 @@
 
                 padding:
                     8px;
+
+                padding-top: calc(8px + env(safe-area-inset-top));
+                padding-bottom: calc(8px + env(safe-area-inset-bottom));
+                padding-left: calc(8px + env(safe-area-inset-left));
+                padding-right: calc(8px + env(safe-area-inset-right));
             }
 
 
@@ -1359,6 +1419,9 @@
 
                 display:
                     flex;
+
+                grid-template-columns:
+                    unset;
             }
 
         }
@@ -1669,7 +1732,8 @@
                 "map",
                 {
                     zoomControl: false,
-                    attributionControl: true
+                    attributionControl: true,
+                    tap: true // asegura buen soporte táctil en iOS/Android
                 }
             ).setView(
                 [4.7110, -74.0721],
@@ -1681,16 +1745,21 @@
            CAPA MAPA NORMAL
         ===================================================== */
 
+        /* NOTA: tile.openstreetmap.org prohíbe su uso desde apps
+           empaquetadas (política de uso de OSM) y responde 403
+           en ese escenario. Usamos Esri (mismo proveedor que ya
+           funciona para la capa satélite) para la capa de calles. */
+
         const normalMap =
             L.tileLayer(
 
-                "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
 
                 {
                     maxZoom: 19,
 
                     attribution:
-                        "&copy; OpenStreetMap"
+                        "Tiles &copy; Esri"
                 }
 
             );
@@ -1716,6 +1785,27 @@
 
 
         normalMap.addTo(map);
+
+
+        /* =====================================================
+           MANTENER EL MAPA BIEN DIMENSIONADO EN MOBILE
+           (la barra de direcciones del navegador cambia el
+           viewport y puede "cortar" el mapa si no se recalcula)
+        ===================================================== */
+
+        function refreshMapSize() {
+            map.invalidateSize();
+        }
+
+        window.addEventListener("resize", refreshMapSize);
+        window.addEventListener("orientationchange", () => {
+            setTimeout(refreshMapSize, 300);
+        });
+
+        if (window.ResizeObserver) {
+            const mapContainerEl = document.querySelector(".map-container");
+            new ResizeObserver(refreshMapSize).observe(mapContainerEl);
+        }
 
 
         /* =====================================================
@@ -1947,305 +2037,148 @@
 
 
         /* =====================================================
-           LOCALIZACIÓN
+           APLICAR UNA POSICIÓN RECIBIDA
+           (recentra el mapa solo la primera vez o cuando el
+           usuario lo pide explícitamente, para no pelear con
+           sus gestos de arrastre/zoom manuales)
         ===================================================== */
 
-        function locateUser() {
+        let hasCenteredMap = false;
+
+        function applyPosition(position, { forceCenter = false, flyDuration = 1.2 } = {}) {
+
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            const accuracy = position.coords.accuracy;
+
+            document.getElementById("lat").textContent = lat.toFixed(6);
+            document.getElementById("lng").textContent = lng.toFixed(6);
+            document.getElementById("accuracy").textContent = Math.round(accuracy) + " m";
+
+            updateTime();
+            setOnline();
+            createMarker(lat, lng);
+
+            if (forceCenter || !hasCenteredMap) {
+                map.flyTo([lat, lng], 17, { duration: flyDuration });
+                hasCenteredMap = true;
+            }
+        }
 
 
-            if (
-                !navigator.geolocation
-            ) {
+        function handleLocationError(error) {
 
-                alert(
-                    "Tu navegador no permite obtener la ubicación."
-                );
+            let message = "";
 
-                return;
+            switch (error.code) {
 
+                case 1:
+                    message =
+                        "Permiso de ubicación denegado. Ve a Ajustes del teléfono → " +
+                        "Apps → Spidey Tracker → Permisos → Ubicación, y actívalo.";
+                    document.getElementById("statusText").textContent = "SIN PERMISO";
+                    break;
+
+                case 2:
+                    message = "No se pudo obtener tu ubicación (¿GPS apagado?).";
+                    document.getElementById("statusText").textContent = "OFFLINE";
+                    break;
+
+                case 3:
+                    message = "La búsqueda de ubicación tardó demasiado.";
+                    document.getElementById("statusText").textContent = "OFFLINE";
+                    break;
+
+                default:
+                    message = "Error desconocido al obtener la ubicación.";
+                    document.getElementById("statusText").textContent = "OFFLINE";
             }
 
-
-            document
-                .getElementById("statusText")
-                .textContent =
-                    "LOCALIZANDO...";
-
-
-            document
-                .getElementById("lat")
-                .textContent =
-                    "...";
-
-
-            document
-                .getElementById("lng")
-                .textContent =
-                    "...";
-
-
-            navigator.geolocation.getCurrentPosition(
-
-                function(position) {
-
-
-                    const lat =
-                        position.coords.latitude;
-
-
-                    const lng =
-                        position.coords.longitude;
-
-
-                    const accuracy =
-                        position.coords.accuracy;
-
-
-                    /* COORDENADAS */
-
-                    document
-                        .getElementById("lat")
-                        .textContent =
-                            lat.toFixed(6);
-
-
-                    document
-                        .getElementById("lng")
-                        .textContent =
-                            lng.toFixed(6);
-
-
-                    /* PRECISIÓN */
-
-                    document
-                        .getElementById("accuracy")
-                        .textContent =
-                            Math.round(
-                                accuracy
-                            ) + " m";
-
-
-                    /* HORA */
-
-                    updateTime();
-
-
-                    /* ESTADO */
-
-                    setOnline();
-
-
-                    /* MARCADOR */
-
-                    createMarker(
-                        lat,
-                        lng
-                    );
-
-
-                    /* CENTRAR MAPA */
-
-                    map.flyTo(
-
-                        [lat, lng],
-
-                        17,
-
-                        {
-                            duration:
-                                2
-                        }
-
-                    );
-
-                },
-
-
-                function(error) {
-
-
-                    let message =
-                        "";
-
-
-                    switch (
-                        error.code
-                    ) {
-
-
-                        case 1:
-
-                            message =
-                                "Permiso de ubicación denegado.";
-
-                            break;
-
-
-                        case 2:
-
-                            message =
-                                "No se pudo obtener tu ubicación.";
-
-                            break;
-
-
-                        case 3:
-
-                            message =
-                                "La búsqueda de ubicación tardó demasiado.";
-
-                            break;
-
-
-                        default:
-
-                            message =
-                                "Error desconocido.";
-
-                    }
-
-
-                    document
-                        .getElementById(
-                            "statusText"
-                        )
-                        .textContent =
-                            "OFFLINE";
-
-
-                    alert(
-                        message
-                    );
-
-                },
-
-
-                {
-
-                    enableHighAccuracy:
-                        true,
-
-                    timeout:
-                        15000,
-
-                    maximumAge:
-                        0
-
-                }
-
-            );
-
+            alert(message);
         }
 
 
         /* =====================================================
-           ACTUALIZACIÓN AUTOMÁTICA
+           LOCALIZACIÓN
+           IMPORTANTE: toda la lógica de geolocalización arranca
+           SOLO desde el tap del botón (gesto directo del usuario).
+           Muchos WebView de Android (como los que genera
+           WebIntoApp) bloquean en silencio el diálogo de permiso
+           de ubicación si el JS lo pide sin un gesto del usuario,
+           que es justo lo que causaba que el móvil "no pidiera"
+           el permiso.
         ===================================================== */
 
-        function watchUser() {
+        let watchStarted = false;
 
+        function locateUser() {
 
-            if (
-                !navigator.geolocation
-            ) {
-
+            if (!navigator.geolocation) {
+                alert("Este dispositivo no permite obtener la ubicación.");
                 return;
             }
 
+            document.getElementById("statusText").textContent = "LOCALIZANDO...";
+            document.getElementById("lat").textContent = "...";
+            document.getElementById("lng").textContent = "...";
+
+            navigator.geolocation.getCurrentPosition(
+
+                (position) => {
+                    applyPosition(position, { forceCenter: true, flyDuration: 2 });
+                    startWatching(); // arranca el seguimiento continuo una sola vez
+                },
+
+                handleLocationError,
+
+                {
+                    enableHighAccuracy: true,
+                    timeout: 15000,
+                    maximumAge: 0
+                }
+            );
+        }
+
+
+        /* =====================================================
+           SEGUIMIENTO CONTINUO EN SEGUNDO PLANO
+           (centra el mapa solo en la primera lectura; después
+           solo mueve el marcador para no interferir si el
+           usuario está explorando el mapa manualmente)
+        ===================================================== */
+
+        function startWatching() {
+
+            if (watchStarted || !navigator.geolocation) {
+                return;
+            }
+
+            watchStarted = true;
 
             navigator.geolocation.watchPosition(
 
-                function(position) {
+                (position) => applyPosition(position),
 
-
-                    const lat =
-                        position.coords.latitude;
-
-
-                    const lng =
-                        position.coords.longitude;
-
-
-                    const accuracy =
-                        position.coords.accuracy;
-
-
-                    document
-                        .getElementById("lat")
-                        .textContent =
-                            lat.toFixed(6);
-
-
-                    document
-                        .getElementById("lng")
-                        .textContent =
-                            lng.toFixed(6);
-
-
-                    document
-                        .getElementById("accuracy")
-                        .textContent =
-                            Math.round(
-                                accuracy
-                            ) + " m";
-
-
-                    updateTime();
-
-
-                    setOnline();
-
-
-                    createMarker(
-                        lat,
-                        lng
-                    );
-
-                },
-
-
-                function(error) {
-
-                    console.log(
-                        "Error de seguimiento:",
-                        error
-                    );
-
-                },
-
+                (error) => console.log("Error de seguimiento:", error),
 
                 {
-
-                    enableHighAccuracy:
-                        true,
-
-                    maximumAge:
-                        2000,
-
-                    timeout:
-                        10000
-
+                    enableHighAccuracy: true,
+                    maximumAge: 2000,
+                    timeout: 10000
                 }
-
             );
-
         }
 
 
         /* =====================================================
            INICIO
+           Solo preparamos el tamaño del mapa. La ubicación se
+           pide exclusivamente al tocar "ACTIVAR SPIDER-TRACKING".
         ===================================================== */
 
-        window.addEventListener(
-            "load",
-            function() {
-
-                locateUser();
-
-                watchUser();
-
-            }
-        );
+        window.addEventListener("load", function () {
+            refreshMapSize();
+        });
 
 
     </script>
