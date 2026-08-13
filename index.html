@@ -15,7 +15,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-    <title>Spider Tracker</title>
+    <title>Spidey Tracker</title>
 
 
     <!-- LEAFLET -->
@@ -1691,6 +1691,87 @@
 
         }
 
+/* =====================================================
+   BOTONES FLOTANTES PARA CONTROLAR EL SCROLL
+===================================================== */
+
+.scroll-controls {
+    position: fixed;
+    right: 20px;
+    bottom: 25px;
+
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+
+    z-index: 9999;
+}
+
+.scroll-button {
+    width: 48px;
+    height: 48px;
+
+    border: 1px solid #ff172f;
+    border-radius: 50%;
+
+    background:
+        linear-gradient(
+            135deg,
+            #1a0003,
+            #080808
+        );
+
+    color: #ff172f;
+
+    font-size: 22px;
+    font-weight: bold;
+
+    cursor: pointer;
+
+    box-shadow:
+        0 0 15px rgba(255, 0, 25, 0.45);
+
+    transition:
+        transform 0.2s,
+        background 0.2s,
+        box-shadow 0.2s;
+
+    touch-action: manipulation;
+}
+
+.scroll-button:hover {
+    background: #ff172f;
+    color: white;
+
+    transform: scale(1.1);
+
+    box-shadow:
+        0 0 25px rgba(255, 0, 25, 0.8);
+}
+
+.scroll-button:active {
+    transform: scale(0.92);
+}
+
+
+/* Ajuste para pantallas pequeñas */
+
+@media (max-width: 600px) {
+
+    .scroll-controls {
+        right: 12px;
+        bottom: 20px;
+    }
+
+    .scroll-button {
+        width: 42px;
+        height: 42px;
+
+        font-size: 18px;
+    }
+
+}
+
     </style>
 
 </head>
@@ -1986,6 +2067,31 @@
 
     </div>
 
+        <!-- =====================================================
+         CONTROLES DE SCROLL
+    ===================================================== -->
+
+    <div class="scroll-controls">
+
+        <button
+            class="scroll-button"
+            onclick="scrollToTop()"
+            aria-label="Subir"
+            title="Subir"
+        >
+            ▲
+        </button>
+
+        <button
+            class="scroll-button"
+            onclick="scrollToBottom()"
+            aria-label="Bajar"
+            title="Bajar"
+        >
+            ▼
+        </button>
+
+    </div>
 
     <!-- =====================================================
          LEAFLET
