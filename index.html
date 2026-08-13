@@ -1,0 +1,2256 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Spider Radar</title>
+
+
+    <!-- LEAFLET -->
+
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    >
+
+
+    <style>
+
+        /* =====================================================
+           CONFIGURACIÓN GENERAL
+        ===================================================== */
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+
+        body {
+
+            width: 100vw;
+            height: 100vh;
+
+            overflow: hidden;
+
+            background:
+                #050505;
+
+            color: white;
+
+            font-family:
+                "Segoe UI",
+                Tahoma,
+                Geneva,
+                Verdana,
+                sans-serif;
+        }
+
+
+        /* =====================================================
+           FONDO TECNOLÓGICO
+        ===================================================== */
+
+        body::before {
+
+            content: "";
+
+            position: fixed;
+
+            inset: 0;
+
+            pointer-events: none;
+
+            z-index: 20;
+
+            opacity: 0.35;
+
+            background-image:
+
+                linear-gradient(
+                    90deg,
+                    transparent 49%,
+                    rgba(255, 0, 25, 0.12) 50%,
+                    transparent 51%
+                ),
+
+                linear-gradient(
+                    0deg,
+                    transparent 49%,
+                    rgba(255, 0, 25, 0.08) 50%,
+                    transparent 51%
+                );
+
+            background-size:
+                80px 80px;
+        }
+
+
+        /* =====================================================
+           DECORACIÓN DE CIRCUITOS
+        ===================================================== */
+
+        .circuit {
+
+            position: fixed;
+
+            pointer-events: none;
+
+            z-index: 30;
+
+            opacity: 0.35;
+        }
+
+
+        .circuit span {
+
+            position: absolute;
+
+            display: block;
+
+            height: 1px;
+
+            background:
+                #e00019;
+
+            box-shadow:
+                0 0 5px #e00019;
+        }
+
+
+        .circuit span::after {
+
+            content: "";
+
+            position: absolute;
+
+            width: 5px;
+            height: 5px;
+
+            right: -2px;
+            top: -2px;
+
+            border-radius: 50%;
+
+            background:
+                #e00019;
+
+            box-shadow:
+                0 0 8px #e00019;
+        }
+
+
+        .circuit-left {
+
+            top: 100px;
+            left: 0;
+
+            width: 350px;
+            height: 300px;
+        }
+
+
+        .circuit-left span:nth-child(1) {
+
+            width: 180px;
+
+            top: 30px;
+            left: 0;
+        }
+
+
+        .circuit-left span:nth-child(2) {
+
+            width: 100px;
+
+            top: 70px;
+            left: 80px;
+        }
+
+
+        .circuit-left span:nth-child(3) {
+
+            width: 230px;
+
+            top: 130px;
+            left: 0;
+        }
+
+
+        .circuit-left span:nth-child(4) {
+
+            width: 120px;
+
+            top: 190px;
+            left: 90px;
+        }
+
+
+        .circuit-right {
+
+            right: 0;
+            bottom: 100px;
+
+            width: 350px;
+            height: 300px;
+        }
+
+
+        .circuit-right span:nth-child(1) {
+
+            width: 180px;
+
+            top: 30px;
+            right: 0;
+        }
+
+
+        .circuit-right span:nth-child(2) {
+
+            width: 100px;
+
+            top: 80px;
+            right: 80px;
+        }
+
+
+        .circuit-right span:nth-child(3) {
+
+            width: 230px;
+
+            top: 140px;
+            right: 0;
+        }
+
+
+        .circuit-right span:nth-child(4) {
+
+            width: 120px;
+
+            top: 210px;
+            right: 100px;
+        }
+
+
+        /* =====================================================
+           CONTENEDOR PRINCIPAL
+        ===================================================== */
+
+        .app {
+
+            width: 100%;
+            height: 100%;
+
+            padding: 18px;
+
+            display: flex;
+
+            flex-direction: column;
+
+            gap: 12px;
+
+            position: relative;
+
+            z-index: 50;
+        }
+
+
+        /* =====================================================
+           HEADER
+        ===================================================== */
+
+        .header {
+
+            height: 78px;
+
+            display: flex;
+
+            align-items: center;
+
+            padding:
+                10px 25px;
+
+            border:
+                1px solid #a90013;
+
+            border-radius:
+                10px 10px 0 0;
+
+            background:
+                linear-gradient(
+                    90deg,
+                    #090909,
+                    #120000,
+                    #090909
+                );
+
+            box-shadow:
+                0 0 20px rgba(220, 0, 25, 0.18);
+
+            position: relative;
+
+            overflow: hidden;
+        }
+
+
+        .header::after {
+
+            content: "";
+
+            position: absolute;
+
+            left: 0;
+            bottom: 0;
+
+            width: 100%;
+            height: 2px;
+
+            background:
+                linear-gradient(
+                    90deg,
+                    transparent,
+                    #ff001c,
+                    transparent
+                );
+
+            box-shadow:
+                0 0 12px #ff001c;
+        }
+
+
+        /* LOGO */
+
+        .logo {
+
+            width: 58px;
+            height: 58px;
+
+            object-fit: contain;
+
+            margin-right: 15px;
+
+            filter:
+                drop-shadow(
+                    0 0 8px rgba(255,0,20,0.8)
+                );
+        }
+
+
+        .header-title {
+
+            display: flex;
+
+            flex-direction: column;
+        }
+
+
+        .header-title h1 {
+
+            color:
+                #e50920;
+
+            font-size:
+                clamp(22px, 3vw, 38px);
+
+            font-weight:
+                900;
+
+            letter-spacing:
+                2px;
+
+            line-height:
+                1;
+            
+            text-shadow:
+                0 0 8px rgba(255,0,20,0.5);
+        }
+
+
+        .header-title p {
+
+            margin-top: 6px;
+
+            color:
+                #eeeeee;
+
+            font-size:
+                13px;
+
+            font-weight:
+                600;
+
+            letter-spacing:
+                1px;
+        }
+
+
+        .online-indicator {
+
+            margin-left: auto;
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 8px;
+
+            font-size:
+                12px;
+
+            letter-spacing:
+                1px;
+
+            color:
+                #999;
+        }
+
+
+        .online-dot {
+
+            width: 9px;
+            height: 9px;
+
+            border-radius:
+                50%;
+
+            background:
+                #ff172f;
+
+            box-shadow:
+                0 0 10px #ff172f;
+
+            transition:
+                0.3s;
+        }
+
+
+        .online-dot.active {
+
+            background:
+                #00ff4c;
+
+            box-shadow:
+                0 0 10px #00ff4c;
+        }
+
+
+        /* =====================================================
+           CONTENIDO
+        ===================================================== */
+
+        .content {
+
+            flex: 1;
+
+            min-height: 0;
+
+            display: grid;
+
+            grid-template-columns:
+                minmax(0, 1fr)
+                340px;
+
+            gap: 12px;
+        }
+
+
+        /* =====================================================
+           MAPA
+        ===================================================== */
+
+        .map-container {
+
+            position: relative;
+
+            min-width: 0;
+
+            min-height: 0;
+
+            overflow: hidden;
+
+            border:
+                1px solid #a90013;
+
+            border-radius:
+                0 0 0 10px;
+
+            background:
+                #050505;
+
+            box-shadow:
+                0 0 25px rgba(220,0,25,0.15);
+        }
+
+
+        #map {
+
+            width: 100%;
+            height: 100%;
+        }
+
+
+        /* OSCURECER MAPA */
+
+        .map-container::after {
+
+            content: "";
+
+            position: absolute;
+
+            inset: 0;
+
+            pointer-events: none;
+
+            z-index: 400;
+
+            background:
+                linear-gradient(
+                    rgba(0,0,0,0.15),
+                    rgba(0,0,0,0.25)
+                );
+
+            box-shadow:
+                inset 0 0 80px rgba(0,0,0,0.75);
+        }
+
+
+        /* =====================================================
+           BOTONES MAPA / SATÉLITE
+        ===================================================== */
+
+        .map-buttons {
+
+            position: absolute;
+
+            top: 12px;
+            left: 12px;
+
+            z-index: 500;
+
+            display: flex;
+
+            overflow: hidden;
+
+            border-radius:
+                5px;
+
+            border:
+                1px solid #aaa;
+
+            box-shadow:
+                0 3px 10px rgba(0,0,0,0.5);
+        }
+
+
+        .map-buttons button {
+
+            border: none;
+
+            padding:
+                9px 15px;
+
+            background:
+                #ffffff;
+
+            color:
+                #222;
+
+            cursor:
+                pointer;
+
+            font-size:
+                13px;
+
+            font-weight:
+                600;
+
+            transition:
+                0.2s;
+        }
+
+
+        .map-buttons button:hover {
+
+            background:
+                #eeeeee;
+        }
+
+
+        .map-buttons button.active {
+
+            background:
+                #e50920;
+
+            color:
+                white;
+        }
+
+
+        /* =====================================================
+           RADAR DEL LADO DERECHO
+        ===================================================== */
+
+        .sidebar {
+
+            min-height: 0;
+
+            display: flex;
+
+            flex-direction: column;
+
+            gap: 10px;
+        }
+
+
+        .radar-panel {
+
+            height: 300px;
+
+            border:
+                1px solid #b40015;
+
+            border-radius:
+                10px;
+
+            background:
+                radial-gradient(
+                    circle,
+                    #260006 0%,
+                    #0a0001 65%,
+                    #030303 100%
+                );
+
+            position: relative;
+
+            overflow: hidden;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            box-shadow:
+                inset 0 0 40px rgba(255,0,25,0.1),
+                0 0 20px rgba(255,0,25,0.12);
+        }
+
+
+        /* =====================================================
+           RADAR CÍRCULOS
+        ===================================================== */
+
+        .radar {
+
+            width: 230px;
+            height: 230px;
+
+            border:
+                1px solid rgba(255,0,25,0.8);
+
+            border-radius:
+                50%;
+
+            position: relative;
+
+            background:
+
+                repeating-radial-gradient(
+                    circle,
+                    transparent 0,
+                    transparent 37px,
+                    rgba(255,0,25,0.6) 38px,
+                    transparent 39px
+                );
+        }
+
+
+        .radar::before {
+
+            content: "";
+
+            position: absolute;
+
+            width: 100%;
+            height: 1px;
+
+            top: 50%;
+            left: 0;
+
+            background:
+                rgba(255,0,25,0.7);
+        }
+
+
+        .radar::after {
+
+            content: "";
+
+            position: absolute;
+
+            width: 1px;
+            height: 100%;
+
+            top: 0;
+            left: 50%;
+
+            background:
+                rgba(255,0,25,0.7);
+        }
+
+
+        /* LÍNEAS DIAGONALES */
+
+        .radar-line {
+
+            position: absolute;
+
+            left: 50%;
+            top: 50%;
+
+            width: 100%;
+
+            height: 1px;
+
+            background:
+                rgba(255,0,25,0.45);
+
+            transform-origin:
+                left center;
+        }
+
+
+        .radar-line.one {
+
+            transform:
+                rotate(45deg);
+        }
+
+
+        .radar-line.two {
+
+            transform:
+                rotate(135deg);
+        }
+
+
+        /* BARRIDO */
+
+        .radar-sweep {
+
+            position: absolute;
+
+            width: 50%;
+            height: 50%;
+
+            left: 50%;
+            top: 50%;
+
+            transform-origin:
+                0 0;
+
+            background:
+                conic-gradient(
+                    from 0deg,
+                    rgba(255,0,25,0.8),
+                    rgba(255,0,25,0.25),
+                    transparent 70%
+                );
+
+            clip-path:
+                polygon(
+                    0 0,
+                    100% 0,
+                    0 100%
+                );
+
+            animation:
+                radarSweep 2.5s linear infinite;
+        }
+
+
+        @keyframes radarSweep {
+
+            from {
+                transform:
+                    rotate(0deg);
+            }
+
+            to {
+                transform:
+                    rotate(360deg);
+            }
+        }
+
+
+        /* PUNTO DEL RADAR */
+
+        .radar-target {
+
+            position: absolute;
+
+            width: 7px;
+            height: 7px;
+
+            border-radius:
+                50%;
+
+            background:
+                #ff001c;
+
+            box-shadow:
+                0 0 10px #ff001c;
+
+            top: 27%;
+            left: 63%;
+
+            animation:
+                targetBlink 1s infinite;
+        }
+
+
+        @keyframes targetBlink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.2;
+            }
+        }
+
+
+        /* =====================================================
+           TARJETAS
+        ===================================================== */
+
+        .card {
+
+            border:
+                1px solid #8f0012;
+
+            border-radius:
+                8px;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #0c0001,
+                    #050505
+                );
+
+            padding:
+                15px;
+
+            box-shadow:
+                0 0 12px rgba(255,0,25,0.08);
+        }
+
+
+        .card-title {
+
+            color:
+                #ff182f;
+
+            font-size:
+                12px;
+
+            font-weight:
+                800;
+
+            letter-spacing:
+                1px;
+
+            margin-bottom:
+                8px;
+
+            text-transform:
+                uppercase;
+        }
+
+
+        /* =====================================================
+           ESTADO
+        ===================================================== */
+
+        .status {
+
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            gap:
+                7px;
+
+            font-size:
+                16px;
+
+            font-weight:
+                800;
+        }
+
+
+        .status-dot {
+
+            width:
+                8px;
+
+            height:
+                8px;
+
+            border-radius:
+                50%;
+
+            background:
+                #777;
+        }
+
+
+        .status.online {
+
+            color:
+                #00ff4c;
+        }
+
+
+        .status.online .status-dot {
+
+            background:
+                #00ff4c;
+
+            box-shadow:
+                0 0 10px #00ff4c;
+        }
+
+
+        .status.offline {
+
+            color:
+                #ff2037;
+        }
+
+
+        .status.offline .status-dot {
+
+            background:
+                #ff2037;
+
+            box-shadow:
+                0 0 10px #ff2037;
+        }
+
+
+        /* =====================================================
+           OBJETIVO
+        ===================================================== */
+
+        .target-name {
+
+            color:
+                #ff172f;
+
+            font-size:
+                18px;
+
+            font-weight:
+                800;
+
+            letter-spacing:
+                1px;
+        }
+
+
+        /* =====================================================
+           COORDENADAS
+        ===================================================== */
+
+        .coordinates {
+
+            display:
+                grid;
+
+            grid-template-columns:
+                1fr 1fr;
+
+            gap:
+                10px;
+
+            margin-top:
+                8px;
+        }
+
+
+        .coordinate {
+
+            display:
+                flex;
+
+            flex-direction:
+                column;
+
+            gap:
+                3px;
+        }
+
+
+        .coordinate span:first-child {
+
+            color:
+                #aaa;
+
+            font-size:
+                10px;
+
+            letter-spacing:
+                1px;
+        }
+
+
+        .coordinate span:last-child {
+
+            color:
+                #00ff4c;
+
+            font-size:
+                15px;
+
+            font-weight:
+                700;
+
+            font-family:
+                monospace;
+        }
+
+
+        /* =====================================================
+           ÚLTIMA ACTUALIZACIÓN
+        ===================================================== */
+
+        .last-update {
+
+            color:
+                #00ff4c;
+
+            font-family:
+                monospace;
+
+            font-size:
+                16px;
+
+            font-weight:
+                700;
+        }
+
+
+        /* =====================================================
+           BOTÓN TRACKING
+        ===================================================== */
+
+        .tracking-button {
+
+            width:
+                100%;
+
+            padding:
+                14px;
+
+            border:
+                1px solid #ff152d;
+
+            border-radius:
+                6px;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #ff172f,
+                    #a80012
+                );
+
+            color:
+                white;
+
+            font-size:
+                14px;
+
+            font-weight:
+                800;
+
+            letter-spacing:
+                0.5px;
+
+            cursor:
+                pointer;
+
+            box-shadow:
+                0 0 15px rgba(255,0,25,0.25);
+
+            transition:
+                0.2s;
+        }
+
+
+        .tracking-button:hover {
+
+            transform:
+                translateY(-1px);
+
+            box-shadow:
+                0 0 25px rgba(255,0,25,0.55);
+        }
+
+
+        .tracking-button:active {
+
+            transform:
+                scale(0.98);
+        }
+
+
+        /* =====================================================
+           MARCADOR SPIDER-MAN
+        ===================================================== */
+
+        .spider-marker {
+
+            width:
+                70px;
+
+            height:
+                70px;
+
+            background-image:
+                url("spiderman.png");
+
+            background-size:
+                contain;
+
+            background-position:
+                center;
+
+            background-repeat:
+                no-repeat;
+
+            filter:
+                drop-shadow(
+                    0 0 6px #ff001c
+                )
+                drop-shadow(
+                    0 0 15px #ff001c
+                );
+
+            position:
+                relative;
+        }
+
+
+        .spider-pulse {
+
+            position:
+                absolute;
+
+            width:
+                70px;
+
+            height:
+                30px;
+
+            left:
+                0;
+
+            bottom:
+                -4px;
+
+            border:
+                2px solid #ff001c;
+
+            border-radius:
+                50%;
+
+            transform:
+                perspective(100px)
+                rotateX(65deg);
+
+            animation:
+                locationPulse 1.5s infinite;
+
+            box-shadow:
+                0 0 10px #ff001c;
+        }
+
+
+        @keyframes locationPulse {
+
+            0% {
+
+                transform:
+                    perspective(100px)
+                    rotateX(65deg)
+                    scale(0.5);
+
+                opacity:
+                    1;
+            }
+
+            100% {
+
+                transform:
+                    perspective(100px)
+                    rotateX(65deg)
+                    scale(1.8);
+
+                opacity:
+                    0;
+            }
+        }
+
+
+        /* =====================================================
+           LEAFLET
+        ===================================================== */
+
+        .leaflet-control-zoom {
+
+            display:
+                none;
+        }
+
+
+        .leaflet-control-attribution {
+
+            background:
+                rgba(0,0,0,0.75) !important;
+
+            color:
+                #777 !important;
+        }
+
+
+        .leaflet-control-attribution a {
+
+            color:
+                #aaa !important;
+        }
+
+
+        /* =====================================================
+           RESPONSIVE
+        ===================================================== */
+
+        @media (max-width: 900px) {
+
+            body {
+                overflow: auto;
+            }
+
+
+            .app {
+
+                min-height:
+                    100vh;
+
+                height:
+                    auto;
+            }
+
+
+            .content {
+
+                grid-template-columns:
+                    1fr;
+            }
+
+
+            .map-container {
+
+                height:
+                    55vh;
+
+                min-height:
+                    400px;
+
+                border-radius:
+                    0 0 10px 10px;
+            }
+
+
+            .sidebar {
+
+                display:
+                    grid;
+
+                grid-template-columns:
+                    1fr 1fr;
+            }
+
+
+            .radar-panel {
+
+                height:
+                    250px;
+            }
+
+        }
+
+
+        @media (max-width: 600px) {
+
+            .app {
+
+                padding:
+                    8px;
+            }
+
+
+            .header {
+
+                height:
+                    70px;
+
+                padding:
+                    8px 12px;
+            }
+
+
+            .logo {
+
+                width:
+                    48px;
+
+                height:
+                    48px;
+            }
+
+
+            .online-indicator {
+
+                display:
+                    none;
+            }
+
+
+            .header-title h1 {
+
+                font-size:
+                    22px;
+            }
+
+
+            .header-title p {
+
+                font-size:
+                    10px;
+            }
+
+
+            .sidebar {
+
+                display:
+                    flex;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+    <!-- DECORACIÓN -->
+
+    <div class="circuit circuit-left">
+
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+
+    </div>
+
+
+    <div class="circuit circuit-right">
+
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+
+    </div>
+
+
+    <!-- =====================================================
+         APLICACIÓN
+    ===================================================== -->
+
+    <div class="app">
+
+
+        <!-- =================================================
+             HEADER
+        ================================================= -->
+
+        <header class="header">
+
+
+            <img
+                src="spiderman.png"
+                class="logo"
+                alt="Spider-Man"
+            >
+
+
+            <div class="header-title">
+
+                <h1>
+                    SPIDER-RADAR
+                </h1>
+
+                <p>
+                    SEGUIMIENTO EN TIEMPO REAL
+                </p>
+
+            </div>
+
+
+            <div class="online-indicator">
+
+                <div
+                    class="online-dot"
+                    id="headerDot"
+                ></div>
+
+                <span id="headerStatus">
+                    SISTEMA OFFLINE
+                </span>
+
+            </div>
+
+
+        </header>
+
+
+        <!-- =================================================
+             CONTENIDO
+        ================================================= -->
+
+        <main class="content">
+
+
+            <!-- =============================================
+                 MAPA
+            ============================================= -->
+
+            <section class="map-container">
+
+
+                <div class="map-buttons">
+
+                    <button
+                        id="mapBtn"
+                        class="active"
+                        onclick="setMapType('map')"
+                    >
+                        Mapa
+                    </button>
+
+                    <button
+                        id="satBtn"
+                        onclick="setMapType('satellite')"
+                    >
+                        Satélite
+                    </button>
+
+                </div>
+
+
+                <div id="map"></div>
+
+
+            </section>
+
+
+            <!-- =============================================
+                 PANEL DERECHO
+            ============================================= -->
+
+            <aside class="sidebar">
+
+
+                <!-- RADAR -->
+
+                <div class="radar-panel">
+
+                    <div class="radar">
+
+                        <div class="radar-line one"></div>
+
+                        <div class="radar-line two"></div>
+
+                        <div class="radar-sweep"></div>
+
+                        <div class="radar-target"></div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- ESTADO -->
+
+                <div class="card">
+
+                    <div class="card-title">
+                        ESTADO
+                    </div>
+
+
+                    <div
+                        class="status offline"
+                        id="status"
+                    >
+
+                        <div class="status-dot"></div>
+
+                        <span id="statusText">
+                            OFFLINE
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <!-- OBJETIVO -->
+
+                <div class="card">
+
+                    <div class="card-title">
+                        OBJETIVO
+                    </div>
+
+                    <div class="target-name">
+                        SPIDER-MAN
+                    </div>
+
+                </div>
+
+
+                <!-- COORDENADAS -->
+
+                <div class="card">
+
+                    <div class="card-title">
+                        COORDENADAS
+                    </div>
+
+
+                    <div class="coordinates">
+
+                        <div class="coordinate">
+
+                            <span>
+                                LATITUD
+                            </span>
+
+                            <span id="lat">
+                                --
+                            </span>
+
+                        </div>
+
+
+                        <div class="coordinate">
+
+                            <span>
+                                LONGITUD
+                            </span>
+
+                            <span id="lng">
+                                --
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- PRECISIÓN -->
+
+                <div class="card">
+
+                    <div class="card-title">
+                        PRECISIÓN
+                    </div>
+
+
+                    <div
+                        class="last-update"
+                        id="accuracy"
+                    >
+                        --
+                    </div>
+
+                </div>
+
+
+                <!-- ACTUALIZACIÓN -->
+
+                <div class="card">
+
+                    <div class="card-title">
+                        ÚLTIMA ACTUALIZACIÓN
+                    </div>
+
+
+                    <div
+                        class="last-update"
+                        id="lastUpdate"
+                    >
+                        --
+                    </div>
+
+                </div>
+
+
+                <!-- BOTÓN -->
+
+                <button
+                    class="tracking-button"
+                    onclick="locateUser()"
+                >
+                    ⦿ &nbsp; ACTIVAR SPIDER-TRACKING
+                </button>
+
+
+            </aside>
+
+
+        </main>
+
+
+    </div>
+
+
+    <!-- =====================================================
+         LEAFLET
+    ===================================================== -->
+
+    <script
+        src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    ></script>
+
+
+    <script>
+
+
+        /* =====================================================
+           MAPA
+        ===================================================== */
+
+        const map =
+            L.map(
+                "map",
+                {
+                    zoomControl: false,
+                    attributionControl: true
+                }
+            ).setView(
+                [4.7110, -74.0721],
+                13
+            );
+
+
+        /* =====================================================
+           CAPA MAPA NORMAL
+        ===================================================== */
+
+        const normalMap =
+            L.tileLayer(
+
+                "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+
+                {
+                    maxZoom: 19,
+
+                    attribution:
+                        "&copy; OpenStreetMap"
+                }
+
+            );
+
+
+        /* =====================================================
+           CAPA SATÉLITE
+        ===================================================== */
+
+        const satelliteMap =
+            L.tileLayer(
+
+                "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+
+                {
+                    maxZoom: 19,
+
+                    attribution:
+                        "Tiles &copy; Esri"
+                }
+
+            );
+
+
+        normalMap.addTo(map);
+
+
+        /* =====================================================
+           CAMBIAR MAPA
+        ===================================================== */
+
+        function setMapType(type) {
+
+
+            if (type === "satellite") {
+
+                map.removeLayer(
+                    normalMap
+                );
+
+                satelliteMap.addTo(
+                    map
+                );
+
+
+                document
+                    .getElementById("satBtn")
+                    .classList.add("active");
+
+
+                document
+                    .getElementById("mapBtn")
+                    .classList.remove("active");
+
+            }
+
+
+            else {
+
+                map.removeLayer(
+                    satelliteMap
+                );
+
+                normalMap.addTo(
+                    map
+                );
+
+
+                document
+                    .getElementById("mapBtn")
+                    .classList.add("active");
+
+
+                document
+                    .getElementById("satBtn")
+                    .classList.remove("active");
+
+            }
+
+        }
+
+
+        /* =====================================================
+           MARCADOR
+        ===================================================== */
+
+        let marker = null;
+
+
+        function createMarker(
+            lat,
+            lng
+        ) {
+
+
+            const icon =
+                L.divIcon({
+
+                    className:
+                        "custom-spider-icon",
+
+                    html: `
+
+                        <div class="spider-marker">
+
+                            <div
+                                class="spider-pulse">
+                            </div>
+
+                        </div>
+
+                    `,
+
+                    iconSize:
+                        [70, 70],
+
+                    iconAnchor:
+                        [35, 35]
+
+                });
+
+
+            if (marker) {
+
+                marker.setLatLng(
+                    [lat, lng]
+                );
+
+                marker.setIcon(
+                    icon
+                );
+
+            }
+
+            else {
+
+                marker =
+                    L.marker(
+
+                        [lat, lng],
+
+                        {
+                            icon: icon
+                        }
+
+                    ).addTo(map);
+
+            }
+
+        }
+
+
+        /* =====================================================
+           HORA
+        ===================================================== */
+
+        function updateTime() {
+
+            const now =
+                new Date();
+
+
+            const hours =
+                String(
+                    now.getHours()
+                ).padStart(
+                    2,
+                    "0"
+                );
+
+
+            const minutes =
+                String(
+                    now.getMinutes()
+                ).padStart(
+                    2,
+                    "0"
+                );
+
+
+            const seconds =
+                String(
+                    now.getSeconds()
+                ).padStart(
+                    2,
+                    "0"
+                );
+
+
+            document
+                .getElementById(
+                    "lastUpdate"
+                )
+                .textContent =
+                    `${hours}:${minutes}:${seconds}`;
+
+        }
+
+
+        /* =====================================================
+           CAMBIAR ESTADO A ONLINE
+        ===================================================== */
+
+        function setOnline() {
+
+
+            const status =
+                document.getElementById(
+                    "status"
+                );
+
+
+            const statusText =
+                document.getElementById(
+                    "statusText"
+                );
+
+
+            const headerDot =
+                document.getElementById(
+                    "headerDot"
+                );
+
+
+            const headerStatus =
+                document.getElementById(
+                    "headerStatus"
+                );
+
+
+            status.classList.remove(
+                "offline"
+            );
+
+
+            status.classList.add(
+                "online"
+            );
+
+
+            statusText.textContent =
+                "ONLINE";
+
+
+            headerDot.classList.add(
+                "active"
+            );
+
+
+            headerStatus.textContent =
+                "SISTEMA ONLINE";
+
+        }
+
+
+        /* =====================================================
+           LOCALIZACIÓN
+        ===================================================== */
+
+        function locateUser() {
+
+
+            if (
+                !navigator.geolocation
+            ) {
+
+                alert(
+                    "Tu navegador no permite obtener la ubicación."
+                );
+
+                return;
+
+            }
+
+
+            document
+                .getElementById("statusText")
+                .textContent =
+                    "LOCALIZANDO...";
+
+
+            document
+                .getElementById("lat")
+                .textContent =
+                    "...";
+
+
+            document
+                .getElementById("lng")
+                .textContent =
+                    "...";
+
+
+            navigator.geolocation.getCurrentPosition(
+
+                function(position) {
+
+
+                    const lat =
+                        position.coords.latitude;
+
+
+                    const lng =
+                        position.coords.longitude;
+
+
+                    const accuracy =
+                        position.coords.accuracy;
+
+
+                    /* COORDENADAS */
+
+                    document
+                        .getElementById("lat")
+                        .textContent =
+                            lat.toFixed(6);
+
+
+                    document
+                        .getElementById("lng")
+                        .textContent =
+                            lng.toFixed(6);
+
+
+                    /* PRECISIÓN */
+
+                    document
+                        .getElementById("accuracy")
+                        .textContent =
+                            Math.round(
+                                accuracy
+                            ) + " m";
+
+
+                    /* HORA */
+
+                    updateTime();
+
+
+                    /* ESTADO */
+
+                    setOnline();
+
+
+                    /* MARCADOR */
+
+                    createMarker(
+                        lat,
+                        lng
+                    );
+
+
+                    /* CENTRAR MAPA */
+
+                    map.flyTo(
+
+                        [lat, lng],
+
+                        17,
+
+                        {
+                            duration:
+                                2
+                        }
+
+                    );
+
+                },
+
+
+                function(error) {
+
+
+                    let message =
+                        "";
+
+
+                    switch (
+                        error.code
+                    ) {
+
+
+                        case 1:
+
+                            message =
+                                "Permiso de ubicación denegado.";
+
+                            break;
+
+
+                        case 2:
+
+                            message =
+                                "No se pudo obtener tu ubicación.";
+
+                            break;
+
+
+                        case 3:
+
+                            message =
+                                "La búsqueda de ubicación tardó demasiado.";
+
+                            break;
+
+
+                        default:
+
+                            message =
+                                "Error desconocido.";
+
+                    }
+
+
+                    document
+                        .getElementById(
+                            "statusText"
+                        )
+                        .textContent =
+                            "OFFLINE";
+
+
+                    alert(
+                        message
+                    );
+
+                },
+
+
+                {
+
+                    enableHighAccuracy:
+                        true,
+
+                    timeout:
+                        15000,
+
+                    maximumAge:
+                        0
+
+                }
+
+            );
+
+        }
+
+
+        /* =====================================================
+           ACTUALIZACIÓN AUTOMÁTICA
+        ===================================================== */
+
+        function watchUser() {
+
+
+            if (
+                !navigator.geolocation
+            ) {
+
+                return;
+            }
+
+
+            navigator.geolocation.watchPosition(
+
+                function(position) {
+
+
+                    const lat =
+                        position.coords.latitude;
+
+
+                    const lng =
+                        position.coords.longitude;
+
+
+                    const accuracy =
+                        position.coords.accuracy;
+
+
+                    document
+                        .getElementById("lat")
+                        .textContent =
+                            lat.toFixed(6);
+
+
+                    document
+                        .getElementById("lng")
+                        .textContent =
+                            lng.toFixed(6);
+
+
+                    document
+                        .getElementById("accuracy")
+                        .textContent =
+                            Math.round(
+                                accuracy
+                            ) + " m";
+
+
+                    updateTime();
+
+
+                    setOnline();
+
+
+                    createMarker(
+                        lat,
+                        lng
+                    );
+
+                },
+
+
+                function(error) {
+
+                    console.log(
+                        "Error de seguimiento:",
+                        error
+                    );
+
+                },
+
+
+                {
+
+                    enableHighAccuracy:
+                        true,
+
+                    maximumAge:
+                        2000,
+
+                    timeout:
+                        10000
+
+                }
+
+            );
+
+        }
+
+
+        /* =====================================================
+           INICIO
+        ===================================================== */
+
+        window.addEventListener(
+            "load",
+            function() {
+
+                locateUser();
+
+                watchUser();
+
+            }
+        );
+
+
+    </script>
+
+
+</body>
+
+</html>
